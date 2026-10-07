@@ -21,6 +21,39 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="Personal AI Backend")
 
+import secrets
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+APP_USER = "admin"
+APP_PASS = "parola123"
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        auth = request.headers.get("Authorization")
+        if not auth or not auth.startswith("Basic "):
+            return Response(
+                status_code=401,
+                headers={"WWW-Authenticate": 'Basic realm="Restricted Area"'},
+                content="Acces interzis."
+            )
+        import base64
+        try:
+            _, data = auth.split(" ", 1)
+            decoded = base64.b64decode(data).decode("utf-8")
+            u, p = decoded.split(":", 1)
+            if not (secrets.compare_digest(u, APP_USER) and secrets.compare_digest(p, APP_PASS)):
+                raise ValueError()
+        except Exception:
+            return Response(
+                status_code=401,
+                headers={"WWW-Authenticate": 'Basic realm="Restricted Area"'},
+                content="Date incorecte."
+            )
+        return await call_next(request)
+
+app.add_middleware(AuthMiddleware)
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()

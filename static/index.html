@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ro" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Personal AI</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; touch-action: manipulation; }
+    .chat-container { height: calc(100dvh - 145px); }
+  </style>
+</head>
+<body class="flex flex-col h-[100dvh] overflow-hidden select-none">
+
+  <!-- Header compact -->
+  <header class="h-12 border-b border-zinc-800 flex items-center justify-between px-3 shrink-0 bg-zinc-950">
+    <div class="flex items-center gap-2">
+      <button id="btn-new-chat" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1.5 rounded text-zinc-200">Nou</button>
+      <select id="select-dir" class="bg-zinc-900 border border-zinc-700 text-xs rounded px-2 py-1 text-zinc-100 max-w-[110px] truncate">
+      </select>
+      <select id="select-model" class="bg-zinc-900 border border-zinc-700 text-xs rounded px-2 py-1 text-zinc-100">
+        <option value="openai:gpt-4o-mini">GPT-4o mini</option>
+        <option value="gemini:gemini-1.5-flash">Gemini Flash</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <button id="btn-mode" class="text-[11px] border border-zinc-700 px-2 py-1 rounded text-zinc-300 font-mono">Scurt</button>
+      <button id="btn-docs" class="p-1.5 text-zinc-400 hover:text-white" title="Documente">📁</button>
+      <button id="btn-history" class="p-1.5 text-zinc-400 hover:text-white" title="Istoric">🕒</button>
+      <button id="btn-settings" class="p-1.5 text-zinc-400 hover:text-white" title="Setări">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Zona de Chat -->
+  <main id="chat-box" class="chat-container overflow-y-auto p-3 flex flex-col gap-3 text-sm">
+    <div class="text-center text-xs text-zinc-500 my-auto" id="empty-state">
+      Personal AI este pregătit. Selectează directorul dorit și adresează întrebarea.
+    </div>
+  </main>
+
+  <!-- Footer Input -->
+  <footer class="border-t border-zinc-800 bg-zinc-950 p-2 shrink-0">
+    <form id="chat-form" class="flex gap-2 items-center">
+      <input type="text" id="prompt-input" autocomplete="off" placeholder="Scrie întrebarea..." 
+             class="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-zinc-500">
+      <button type="submit" id="btn-send" class="bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-lg text-sm font-medium">Trimite</button>
+    </form>
+    <div class="flex justify-between items-center px-1 mt-1 text-[10px] text-zinc-500">
+      <span id="token-indicator">Model gata</span>
+      <label class="flex items-center gap-1 cursor-pointer">
+        <input type="checkbox" id="check-web" class="rounded bg-zinc-900 border-zinc-700"> Web Search
+      </label>
+    </div>
+  </footer>
+
+  <!-- Modal Documente -->
+  <div id="modal-docs" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg w-full max-w-md p-4 flex flex-col gap-3 max-h-[85vh]">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold">Documente: <span id="current-dir-name" class="text-sky-400"></span></h3>
+        <button class="btn-close-modal text-zinc-400">✕</button>
+      </div>
+      <div id="doc-list" class="flex-1 overflow-y-auto space-y-1.5 text-xs text-zinc-300">
+      </div>
+      <div class="border-t border-zinc-800 pt-3 flex flex-col gap-2">
+        <input type="file" id="file-upload-input" accept=".pdf,.txt,.docx" class="text-xs text-zinc-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-zinc-800 file:text-zinc-200">
+        <button id="btn-do-upload" class="bg-zinc-800 hover:bg-zinc-700 text-xs py-1.5 rounded">Încarcă fișier</button>
+        <div id="upload-status" class="text-[11px] text-zinc-400 text-center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Setări -->
+  <div id="modal-settings" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg w-full max-w-sm p-4 flex flex-col gap-3">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold">Setări API</h3>
+        <button class="btn-close-modal text-zinc-400">✕</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block text-zinc-400 mb-1">OpenAI API Key</label>
+          <input type="password" id="input-openai-key" class="w-full bg-zinc-950 border border-zinc-800 rounded p-1.5 text-zinc-200">
+        </div>
+        <div>
+          <label class="block text-zinc-400 mb-1">Google Gemini API Key</label>
+          <input type="password" id="input-gemini-key" class="w-full bg-zinc-950 border border-zinc-800 rounded p-1.5 text-zinc-200">
+        </div>
+        <button id="btn-save-keys" class="w-full bg-sky-600 hover:bg-sky-500 py-1.5 rounded text-white font-medium mt-2">Salvează cheile</button>
+        <div id="settings-status" class="text-center text-[11px] mt-1 text-zinc-400"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Istoric -->
+  <div id="modal-history" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg w-full max-w-sm p-4 flex flex-col gap-3 max-h-[80vh]">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold">Istoric conversații</h3>
+        <button class="btn-close-modal text-zinc-400">✕</button>
+      </div>
+      <div id="conv-list" class="flex-1 overflow-y-auto space-y-1 text-xs">
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
